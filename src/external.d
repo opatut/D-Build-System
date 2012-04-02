@@ -19,7 +19,7 @@ class External : Dependency {
             writefln("$ %s", command);
         }
 
-        if(isAnyFileNewer(includePaths, linkPaths)) {
+        if(Settings.ForceBuild || isAnyFileNewer(includePaths, linkPaths)) {
             string s = shell(command);
             writeln(s);
         } else {

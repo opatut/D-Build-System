@@ -43,7 +43,7 @@ class Target : Dependency {
             writefln("$ %s", comp.command);
         }
 
-        if(isAnyFileNewer(inputFiles, [outputFile])) {
+        if(Settings.ForceBuild || isAnyFileNewer(inputFiles, [outputFile])) {
             string s = shell(comp.command);
             writeln(s);
         } else {

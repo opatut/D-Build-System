@@ -48,4 +48,8 @@ struct Settings {
     /// -v|--verbose
     /// Be verbose.
     static bool Verbose = false;
+
+    /// -f|--force
+    /// Force building every target and dependency.
+    static bool ForceBuild = false;
 }

@@ -3,11 +3,10 @@ import std.process : shell, ErrnoException;
 
 import dependency;
 import settings;
+import compilebuilder;
 
 class External : Dependency {
     string command;
-    string includePath;
-    string libPath;
 
     this(string name, string command, string[] linkNames = [], string[] linkPaths = [], string[] includePaths = [], Dependency[] dependencies = []) {
         this.command = command;
@@ -20,23 +19,15 @@ class External : Dependency {
             writefln("$ %s", command);
         }
 
-        string s = shell(command);
-        writeln(s);
+        if(isAnyFileNewer(includePaths, linkPaths)) {
+            string s = shell(command);
+            writeln(s);
+        } else {
+            if(Settings.Verbose) writeln("Nothing to do.");
+        }
 
-        writeln();
     }
 
-    @property string linkName() {
-        return name;
-    }
-    @property string[] includePaths() {
-        if(includePath != "") return [includePath];
-        return [];
-    }
-    @property string[] linkPaths() {
-        if(libPath != "") return [libPath];
-        return [];
-    }
 }
 
 

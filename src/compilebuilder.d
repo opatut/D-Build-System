@@ -1,5 +1,24 @@
+import std.file;
+import std.datetime;
+
 import settings;
 import dependency;
+
+bool isAnyFileNewer(string[] files, string[] referenceFiles) {
+    std.datetime.SysTime newestReference = SysTime.min;
+
+    // timeLastModified(source) >= timeLastModified(target, SysTime.min)
+
+    foreach(r; referenceFiles) {
+        if(timeLastModified(r, SysTime.min) > newestReference)
+            newestReference = timeLastModified(r, SysTime.min);
+    }
+    foreach(f; files) {
+        if(timeLastModified(f) > newestReference)
+            return true;
+    }
+    return false;
+}
 
 class CompileBuilder {
     TargetType targetType;

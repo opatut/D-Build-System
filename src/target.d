@@ -42,8 +42,13 @@ class Target : Dependency {
         if(Settings.Verbose) {
             writefln("$ %s", comp.command);
         }
-        string s = shell(comp.command);
-        writeln(s);
+
+        if(isAnyFileNewer(inputFiles, [outputFile])) {
+            string s = shell(comp.command);
+            writeln(s);
+        } else {
+            if(Settings.Verbose) writeln("Nothing to do.");
+        }
     }
 
     this(string name, string files = "", string documentRoot = "", TargetType type = TargetType.Executable, Dependency[] dependencies = []) {

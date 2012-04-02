@@ -20,7 +20,6 @@ class Dependency {
     void prepare() {
         if(!prepared) {
             prepareDependencies();
-            writeln();
             writefln(":: Preparing %s", name);
             _prepare();
 

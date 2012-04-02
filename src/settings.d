@@ -4,8 +4,7 @@ module settings;
 enum Compiler {
     DMD,
     GDC,
-    LDC,
-    LDC2
+    LDC
 }
 
 /// Target types

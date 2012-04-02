@@ -13,7 +13,7 @@ class External : Dependency {
         super(name, linkNames, linkPaths, includePaths, dependencies);
     }
 
-    void build() {
+    void _prepare() {
         writefln("Building external target %s.", name);
         writefln("$ %s", command);
 

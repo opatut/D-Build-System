@@ -30,6 +30,10 @@ Is not required anymore, use Dependency with absolute paths.
 
     # Comment like this
 
+    compiler: DMD
+    libraryPath: "lib/"
+    binaryPath: "bin/"
+
     Dependency {
         name: sfml
 

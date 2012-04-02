@@ -73,8 +73,7 @@ private:
         switch(Settings.SelectedCompiler) {
             case Compiler.DMD: return "dmd";
             case Compiler.GDC: return "gdc";
-            case Compiler.LDC: return "ldc";
-            case Compiler.LDC2: return "ldc2";
+            case Compiler.LDC: return "ldc2";
             default: assert(false, "Unknown Compiler.");
         }
     }

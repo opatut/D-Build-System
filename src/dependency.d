@@ -1,5 +1,7 @@
 import std.stdio;
 
+import settings;
+
 class Dependency {
     string name;
     bool prepared = false;
@@ -20,7 +22,7 @@ class Dependency {
     void prepare() {
         if(!prepared) {
             prepareDependencies();
-            writefln(":: Preparing %s", name);
+            if(Settings.Verbose) writefln(":: Preparing %s", name);
             _prepare();
 
             prepared = true;

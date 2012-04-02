@@ -44,4 +44,8 @@ struct Settings {
     /// One of these: Dmd, Gnu, Ldc, Ldc2
     /// Compiler to use.
     static Compiler SelectedCompiler = Compiler.DMD;
+
+    /// -v|--verbose
+    /// Be verbose.
+    static bool Verbose = false;
 }

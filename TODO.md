@@ -1,3 +1,7 @@
+# ToDo
+
+- Error Handling, nice outputs
+
 # Classes
 
 ## Dependency

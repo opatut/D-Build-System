@@ -2,6 +2,7 @@ import std.stdio;
 import std.process : shell, ErrnoException;
 
 import dependency;
+import settings;
 
 class External : Dependency {
     string command;
@@ -14,8 +15,10 @@ class External : Dependency {
     }
 
     void _prepare() {
-        writefln("Building external target %s.", name);
-        writefln("$ %s", command);
+        if(Settings.Verbose) {
+            writefln("==== Building external target %s ====", name);
+            writefln("$ %s", command);
+        }
 
         string s = shell(command);
         writeln(s);

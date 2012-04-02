@@ -38,9 +38,10 @@ class Target : Dependency {
         }
         comp.outputFile = outputFile;
         comp.inputFiles = inputFiles;
-
-        writefln("Building %s target %s.", type == TargetType.Executable ? "executable" : "library", name);
-        writefln("$ %s", comp.command);
+        writefln("==== Building %s target %s ====", type == TargetType.Executable ? "executable" : "library", name);
+        if(Settings.Verbose) {
+            writefln("$ %s", comp.command);
+        }
         string s = shell(comp.command);
         writeln(s);
     }

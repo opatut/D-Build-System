@@ -21,6 +21,7 @@ Usage:
 
   -h  --help                        Display this help
   -l  --list-targets                Lists the available targets from the configuration
+  -v  --verbose                     Be verbose (more output information)
   -c  --config <config-file>        Uses the configuration file (default: DBuildFile)
   -L  --libdir <library-path>       Set the library output path (default: lib/)
   -B  --bindir <binary-path>        Set the binary output path (default: bin/)
@@ -62,6 +63,7 @@ int main(string[] args) {
         std.getopt.config.caseSensitive,
         "h|help", &displayHelp,
         "l|list-targets", &displayList,
+        "v|verbose", &Settings.Verbose,
         "c|config", &configFile,
         "L|libdir", &Settings.LibraryPath,
         "B|bindir", &Settings.ExecutablePath,

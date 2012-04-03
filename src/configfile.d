@@ -140,6 +140,8 @@ class ConfigFile {
     string[string] dependencyStrings;
     Dependency[string] loadedDependencies;
 
+    string[] defaultTargets;
+
     this(string filename) {
         string c = cast(string) read(filename);
         auto r = new ParseStruct("", c);
@@ -149,6 +151,10 @@ class ConfigFile {
             Settings.SelectedCompiler = stringToEnum!Compiler(compiler);
         r.to("libraryPath", Settings.LibraryPath);
         r.to("binaryPath", Settings.ExecutablePath);
+
+        string def;
+        if(r.to("default", def))
+            defaultTargets = splitStringList(def);
 
         foreach(child; r.children) {
             if(child.name == "Target") readTarget(child);

@@ -30,30 +30,12 @@ Usage:
 ");
 }
 
-void printList() {
-    string[] ds;
-    string[] ts;
-    string[] es;
-
+string list() {
+    string result = "";
     foreach(d; cfg.loadedDependencies) {
-        if(isClass!Dependency(d)) {
-            ds ~= d.name;
-        } else if(isClass!Target(d)) {
-            ts ~= d.name;
-        } else if(isClass!External(d)) {
-            es ~= d.name;
-        }
+        result ~= d.name ~ " ";
     }
-
-    void writeList(string t, string[] list) {
-        writeln(t ~ ":");
-        write("   ");
-        foreach(l; list) write(" " ~ l);
-        writeln();
-    }
-    writeList("System Dependencies", ds);
-    writeList("External Targets", es);
-    writeList("Targets", ts);
+    return result;
 }
 
 int main(string[] args) {
@@ -73,7 +55,7 @@ int main(string[] args) {
 
     string[] targetList = args[1..$];
 
-    if(displayHelp || (!displayList && !targetList.length)) {
+    if(displayHelp) {
         printHelp();
         return 0;
     }
@@ -81,11 +63,24 @@ int main(string[] args) {
     cfg = new ConfigFile(configFile);
 
     if(displayList) {
-        printList();
+        writeln(list());
         return 0;
     }
 
-    writeln((cast(External)cfg.loadedDependencies["luad"]).command);
+    if(targetList.length == 0) {
+        targetList = cfg.defaultTargets;
+    }
+
+    if(!targetList.length) {
+        writefln("No target selected. Available targets:
+  %s
+
+You can define default targets in your DBuildFile
+  default: target1 target2 ...
+
+For usage information, use --help.", list());
+        return 0;
+    }
 
     cfg.build(targetList);
 

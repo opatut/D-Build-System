@@ -39,7 +39,7 @@ class Dependency {
     void prepare() {
         if(!prepared) {
             prepareDependencies();
-            if(Settings.Verbose) writefln(":: Preparing %s", name);
+            // if(Settings.Verbose) writefln(":: Preparing %s", name);
             _prepare();
 
             prepared = true;

@@ -23,6 +23,7 @@ import target;
 import dependency;
 import external;
 import configfile;
+import output;
 
 ConfigFile cfg;
 
@@ -31,9 +32,10 @@ bool isClass(Class, Obj)(Obj x) {
 }
 
 void printHelp() {
-    write("DBS - D Build System
-Copyright (c) 2012 -- Written by Paul 'opatut' Bienkowski
-Usage:
+    writeln(sWrap("DBS - D Build System", Color.White, Style.Bold) );
+    writeln(sWrap("Copyright (c) 2012 -- Written by Paul 'opatut' Bienkowski", Color.White, Style.Bold) );
+
+    write("Usage:
   dbs [options] targets
 
   -h  --help                        Display this help

@@ -26,6 +26,7 @@ import std.process : shell, ErrnoException;
 import dependency;
 import settings;
 import compilebuilder;
+import output;
 
 /*****************************************************************
  * Builds a D package.
@@ -55,16 +56,14 @@ class Target : Dependency {
         }
         comp.outputFile = outputFile;
         comp.inputFiles = inputFiles;
-        writefln("==== Building %s target %s ====", type == TargetType.Executable ? "executable" : "library", name);
-        if(Settings.Verbose) {
-            writefln("$ %s", comp.command);
-        }
 
         if(Settings.ForceBuild || isAnyFileNewer(inputFiles, [outputFile])) {
+            writefln(sWrap(":: Building %s target %s", Color.White, Style.Bold), type == TargetType.Executable ? "executable" : "library", name);
+            if(Settings.Verbose) writefln(sWrap("$ %s", Color.Yellow), comp.command);
             string s = shell(comp.command);
-            writeln(s);
+            write(s);
         } else {
-            if(Settings.Verbose) writeln("Nothing to do.");
+            writefln(sWrap("-> Nothing to do for target %s", Color.Yellow), name);
         }
     }
 

@@ -21,11 +21,13 @@ along with DBS.  If not, see <http://www.gnu.org/licenses/>.
 
 ## Installation
 
-Compile it with 
+Compile DBS with `make` or manually with
 
-    dmd *.d -ofdbs
+	dmd -odbuild/ -ofbin/dbs -Isrc/ src/*.d
 
-Then copy the executable `dbs` to your path or call it from your project root. 
+Then copy the executable `bin/dbs` to your path or call it from your project root. For temporary testing, you can add the `bin/` directory to your path environment variable like this:
+
+    PATH=$PATH":"$PWD"/bin"
 
 ## Usage
 

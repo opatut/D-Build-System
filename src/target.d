@@ -87,7 +87,7 @@ class Target : Dependency {
         } else {
             assert(documentRoot != "", "You have to specify a document root if the input is a list of files.");
 
-            foreach(s; std.regex.split(files, std.regex.regex("(?<!\\)\\s+")))
+            foreach(s; std.regex.split(files, std.regex.regex("(?<!\\\\)\\s+")))
                 inputFiles ~= s;
 
             if(name == "") {

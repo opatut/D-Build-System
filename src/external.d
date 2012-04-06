@@ -31,7 +31,7 @@ class External : Dependency {
     }
 
     bool _prepare() {
-        if(Settings.ForceBuild || isAnyFileNewer(includePaths, linkPaths)) {
+        if(Settings.ForceBuildAll || isAnyFileNewer(includePaths, linkPaths)) {
             if(Settings.Verbose) {
                 writefln(sWrap(":: Building external target %s", Color.White, Style.Bold), name);
             }

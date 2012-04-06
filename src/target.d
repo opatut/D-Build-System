@@ -56,7 +56,7 @@ class Target : Dependency {
         comp.outputFile = outputFile;
         comp.inputFiles = inputFiles;
 
-        if(Settings.ForceBuild || isAnyFileNewer(inputFiles, [outputFile])) {
+        if(Settings.ForceBuild || Settings.ForceBuildAll || isAnyFileNewer(inputFiles, [outputFile])) {
             writefln(sWrap(":: Building %s target %s", Color.White, Style.Bold), type == TargetType.Executable ? "executable" : "library", name);
             return runCommand(comp.command);
         } else {

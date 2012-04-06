@@ -67,6 +67,10 @@ struct Settings {
     static bool Verbose = false;
 
     /// -f|--force
-    /// Force building every target and dependency.
+    /// Force building every target in the target list.
     static bool ForceBuild = false;
+
+    /// -F|--force-all
+    /// Force building every target and external
+    static bool ForceBuildAll = false;
 }

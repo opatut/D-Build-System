@@ -41,7 +41,8 @@ void printHelp() {
   -h  --help                        Display this help
   -l  --list-targets                Lists the available targets from the configuration
   -v  --verbose                     Be verbose (more output information)
-  -f  --force                       Force building every target and dependency
+  -f  --force                       Force building every target
+  -F  --force-all                   Force building every target and external
   -c  --config <config-file>        Uses the configuration file (default: DBuildFile)
   -L  --libdir <library-path>       Set the library output path (default: lib/)
   -B  --bindir <binary-path>        Set the binary output path (default: bin/)
@@ -67,6 +68,7 @@ int main(string[] args) {
         "l|list-targets", &displayList,
         "v|verbose", &Settings.Verbose,
         "f|force", &Settings.ForceBuild,
+        "F|force-all", &Settings.ForceBuildAll,
         "c|config", &configFile,
         "L|libdir", &Settings.LibraryPath,
         "B|bindir", &Settings.ExecutablePath,

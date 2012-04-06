@@ -103,7 +103,8 @@ For usage information, use --help.", list());
         return 0;
     }
 
-    cfg.build(targetList);
+    if(!cfg.build(targetList))
+        return 1;
 
     return 0;
 }

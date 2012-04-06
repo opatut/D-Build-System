@@ -1,6 +1,9 @@
 # ToDo
 
 - Error Handling, nice outputs
+- Re-link if dependencies changed
+- Partial compiling
+- Intelligent module recognition
 
 # Classes
 

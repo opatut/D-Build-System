@@ -36,24 +36,30 @@ class Dependency {
     }
 
     /// prepares this dependency (e.g. if this is a target, build it)
-    void prepare() {
+    bool prepare() {
         if(!prepared) {
-            prepareDependencies();
+            if(!prepareDependencies())
+                return false;
             // if(Settings.Verbose) writefln(":: Preparing %s", name);
-            _prepare();
-
+            bool success = _prepare();
             prepared = true;
+            return success;
         }
+        return true;
     }
 
-    /// override this for custom preparation process
-    void _prepare() {}
+    /// override this for custom preparation process, return true if success
+    bool _prepare() {
+        return true;
+    }
 
     /// prepares all dependencies of this dependency
-    void prepareDependencies() {
+    bool prepareDependencies() {
         foreach(d; dependencies) {
-            d.prepare();
+            if(!d.prepare())
+                return false;
         }
+        return true;
     }
 }
 

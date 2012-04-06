@@ -16,10 +16,13 @@
  */
 
 import std.file;
+import std.stdio;
 import std.datetime;
+import std.process : shell, ErrnoException;
 
 import settings;
 import dependency;
+import output;
 
 bool isAnyFileNewer(string[] files, string[] referenceFiles) {
     std.datetime.SysTime newestReference = SysTime.min;
@@ -35,6 +38,21 @@ bool isAnyFileNewer(string[] files, string[] referenceFiles) {
             return true;
     }
     return false;
+}
+
+bool runCommand(string cmd) {
+    if(Settings.Verbose) {
+        writefln(sWrap("$ %s", Color.Yellow), cmd);
+    }
+
+    try {
+        string s = shell(cmd);
+        write(s);
+        return true;
+    } catch(ErrnoException e) {
+        if(Settings.Verbose) writeln(e);
+        return false;
+    }
 }
 
 class CompileBuilder {

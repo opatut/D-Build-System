@@ -16,7 +16,6 @@
  */
 
 import std.stdio;
-import std.process : shell, ErrnoException;
 
 import dependency;
 import settings;
@@ -31,17 +30,16 @@ class External : Dependency {
         super(name, linkNames, linkPaths, includePaths, dependencies);
     }
 
-    void _prepare() {
+    bool _prepare() {
         if(Settings.ForceBuild || isAnyFileNewer(includePaths, linkPaths)) {
             if(Settings.Verbose) {
                 writefln(sWrap(":: Building external target %s", Color.White, Style.Bold), name);
-                writefln(sWrap("$ %s", Color.Yellow), command);
             }
-            string s = shell(command);
-            write(s);
+            return runCommand(command);
         } else {
             if(Settings.Verbose) writefln(sWrap("-> Nothing to do for target %s", Color.Yellow), name);
         }
+        return true;
 
     }
 

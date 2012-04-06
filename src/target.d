@@ -21,7 +21,6 @@ import std.string : format, strip;
 import std.path;
 import std.conv;
 import std.stdio;
-import std.process : shell, ErrnoException;
 
 import dependency;
 import settings;
@@ -48,7 +47,7 @@ class Target : Dependency {
     string outputFile;
     string documentRoot;
 
-    void _prepare() {
+    bool _prepare() {
         CompileBuilder comp = new CompileBuilder();
         comp.targetType = type;
         foreach(d; dependencies) {
@@ -59,12 +58,11 @@ class Target : Dependency {
 
         if(Settings.ForceBuild || isAnyFileNewer(inputFiles, [outputFile])) {
             writefln(sWrap(":: Building %s target %s", Color.White, Style.Bold), type == TargetType.Executable ? "executable" : "library", name);
-            if(Settings.Verbose) writefln(sWrap("$ %s", Color.Yellow), comp.command);
-            string s = shell(comp.command);
-            write(s);
+            return runCommand(comp.command);
         } else {
             writefln(sWrap("-> Nothing to do for target %s", Color.Yellow), name);
         }
+        return true;
     }
 
     this(string name, string files = "", string documentRoot = "", TargetType type = TargetType.Executable, Dependency[] dependencies = []) {

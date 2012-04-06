@@ -265,7 +265,7 @@ class ConfigFile {
     bool build(string[] targetList) {
         foreach(target; targetList) {
             if(target in loadedDependencies) {
-                loadedDependencies[target].prepare();
+                return loadedDependencies[target].prepare();
             } else {
                 writefln("Cannot find target %s. Aborting.", target);
                 return false;

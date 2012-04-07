@@ -46,9 +46,10 @@ class Target : Dependency {
 
     string outputFile;
     string documentRoot;
+    string flags;
 
     bool _prepare() {
-        CompileBuilder comp = new CompileBuilder();
+        CompileBuilder comp = new CompileBuilder(flags);
         comp.targetType = type;
         foreach(d; dependencies) {
             comp.addDependency(d);
@@ -65,9 +66,10 @@ class Target : Dependency {
         return true;
     }
 
-    this(string name, string files = "", string documentRoot = "", TargetType type = TargetType.Executable, Dependency[] dependencies = []) {
+    this(string name, string files = "", string documentRoot = "", TargetType type = TargetType.Executable, Dependency[] dependencies = [], string flags = "") {
         this.type = type;
         this.documentRoot = documentRoot;
+        this.flags = flags;
 
         if(isDir(files)) {
             if(documentRoot == "")

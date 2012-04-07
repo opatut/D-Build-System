@@ -18,6 +18,7 @@
 import std.file;
 import std.stdio;
 import std.datetime;
+import std.string;
 import std.process : shell, ErrnoException;
 
 import settings;
@@ -64,6 +65,11 @@ class CompileBuilder {
 
     string outputFile;
     string[] inputFiles;
+    string extraFlags;
+
+    this(string flags = "") {
+        extraFlags = flags;
+    }
 
     void addDependency(Dependency d) {
         foreach(dep; d.dependencies) {
@@ -80,6 +86,8 @@ class CompileBuilder {
         cmd ~= compilerCommand;
         cmd ~= typeArgument;
         cmd ~= " -of" ~ outputFile;
+        if(Settings.CompilerFlags) cmd ~= " " ~ strip(Settings.CompilerFlags);
+        if(extraFlags) cmd ~= " " ~ strip(extraFlags);
         cmd ~= includeFlags;
         cmd ~= linkFlags;
         cmd ~= inputFileNames;

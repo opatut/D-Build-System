@@ -47,6 +47,7 @@ void printHelp() {
   -L  --libdir <library-path>       Set the library output path (default: lib/)
   -B  --bindir <binary-path>        Set the binary output path (default: bin/)
   -C  --compiler {DMD|GDC|LDC}      Set the compiler (default: Dmd)
+  -m  --compiler-flags              Sets additional compiler flags
 ");
 }
 
@@ -61,6 +62,7 @@ string list() {
 int main(string[] args) {
     bool displayHelp, displayList;
     string configFile = "DBuildFile";
+    string compilerFlags;
     getopt(args,
         std.getopt.config.bundling,
         std.getopt.config.caseSensitive,
@@ -72,7 +74,11 @@ int main(string[] args) {
         "c|config", &configFile,
         "L|libdir", &Settings.LibraryPath,
         "B|bindir", &Settings.ExecutablePath,
-        "C|compiler", &Settings.SelectedCompiler);
+        "C|compiler", &Settings.SelectedCompiler,
+        "m|compiler-flags", &compilerFlags);
+
+    if(compilerFlags)
+        Settings.CompilerFlags ~= compilerFlags ~ " ";
 
     string[] targetList = args[1..$];
 

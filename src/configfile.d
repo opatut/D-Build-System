@@ -169,6 +169,10 @@ class ConfigFile {
         r.to("libraryPath", Settings.LibraryPath);
         r.to("binaryPath", Settings.ExecutablePath);
 
+        string flags;
+        if(r.to("compilerFlags", flags) && flags)
+            Settings.CompilerFlags ~= flags ~ " ";
+
         string def;
         if(r.to("default", def))
             defaultTargets = splitStringList(def);
@@ -245,11 +249,16 @@ class ConfigFile {
         string documentRoot;
         r.to("documentRoot", documentRoot);
 
+        string flags;
+        r.to("compilerFlags", flags);
+
         Target t = new Target(
             r.values["name"],
             r.values["files"],
             documentRoot,
-            stringToEnum!TargetType(r.values["type"]));
+            stringToEnum!TargetType(r.values["type"]),
+            [],
+            flags);
 
         insertDependency(t, r);
     }

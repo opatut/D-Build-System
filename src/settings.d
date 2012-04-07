@@ -73,4 +73,6 @@ struct Settings {
     /// -F|--force-all
     /// Force building every target and external
     static bool ForceBuildAll = false;
+
+    static string CompilerFlags = "";
 }

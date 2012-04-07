@@ -47,9 +47,7 @@ string sWrap(string str, Color color, Style style = Style.Normal, Color backgrou
 }
 
 string sStart(Color color, Style style = Style.Normal, bool highIntensity = false) {
-    version(Windows) {
-        return "";
-    } version(linux) {
+    version(posix) {
         string s = to!string(
             30 +
             cast(int)color +
@@ -59,16 +57,17 @@ string sStart(Color color, Style style = Style.Normal, bool highIntensity = fals
         if(style != Style.Background) {
             s = format("%s;%s", cast(int)style, s);
         }
-
         return format("\033[%sm", s);
+    } else {
+	return "";
     }
 }
 
 string sEnd() {
-    version(Windows) {
-        return "";
-    } version(linux) {
+    version(posix) {
         return "\033[0m";
+    } else {
+        return "";
     }
 }
 

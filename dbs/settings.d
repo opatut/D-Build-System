@@ -78,7 +78,7 @@ struct Settings {
 
     static string CompilerFlags = "";
 
-    static void getOpt(string[] args) {
+    static void getOpt(ref string[] args) {
         string compilerFlags;
         getopt(args,
             std.getopt.config.bundling,

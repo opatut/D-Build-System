@@ -17,6 +17,7 @@
 
 import std.stdio;
 import std.getopt;
+import std.file;
 
 import dbs.all;
 
@@ -61,12 +62,17 @@ int main(string[] args) {
     // get command-line config
     Settings.getOpt(args);
     // get rest of options
-    getopt(args,
-        std.getopt.config.bundling,
-        std.getopt.config.caseSensitive,
-        "h|help", &displayHelp,
-        "l|list-targets", &displayList,
-        "c|config", &configFile);
+    try {
+        getopt(args,
+            std.getopt.config.bundling,
+            std.getopt.config.caseSensitive,
+            "h|help", &displayHelp,
+            "l|list-targets", &displayList,
+            "c|config", &configFile);
+    } catch(Exception e) {
+        writeln(sWrap("Error parsing arguments: ", Color.Red, Style.Bold) ~ e.msg);
+        return 1;
+    }
 
     string[] targetList = args[1..$];
 
@@ -75,7 +81,12 @@ int main(string[] args) {
         return 0;
     }
 
-    cfg = new ConfigFile(configFile);
+    try {
+        cfg = new ConfigFile(configFile);
+    } catch(FileException e) {
+        writeln(sWrap("Error loading " ~ e.msg, Color.Red, Style.Bold));
+        return 1;
+    }
 
     if(displayList) {
         writeln(list());

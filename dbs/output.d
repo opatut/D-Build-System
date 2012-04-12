@@ -49,7 +49,7 @@ string sWrap(string str, Color color, Style style = Style.Normal, Color backgrou
 }
 
 string sStart(Color color, Style style = Style.Normal, bool highIntensity = false) {
-    version(posix) {
+    version(Posix) {
         string s = to!string(
             30 +
             cast(int)color +
@@ -61,12 +61,12 @@ string sStart(Color color, Style style = Style.Normal, bool highIntensity = fals
         }
         return format("\033[%sm", s);
     } else {
-	return "";
+    return "";
     }
 }
 
 string sEnd() {
-    version(posix) {
+    version(Posix) {
         return "\033[0m";
     } else {
         return "";

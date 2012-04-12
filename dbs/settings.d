@@ -83,6 +83,7 @@ struct Settings {
         getopt(args,
             std.getopt.config.bundling,
             std.getopt.config.caseSensitive,
+            std.getopt.config.passThrough,      // ignore unrecognized options
             "v|verbose", &Settings.Verbose,
             "f|force", &Settings.ForceBuild,
             "F|force-all", &Settings.ForceBuildAll,

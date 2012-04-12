@@ -17,6 +17,8 @@
 
 module dbs.settings;
 
+import std.getopt;
+
 /// Compilers available
 enum Compiler {
     DMD,
@@ -75,4 +77,20 @@ struct Settings {
     static bool ForceBuildAll = false;
 
     static string CompilerFlags = "";
+
+    static void getOpt(string[] args) {
+        string compilerFlags;
+        getopt(args,
+            std.getopt.config.bundling,
+            std.getopt.config.caseSensitive,
+            "v|verbose", &Settings.Verbose,
+            "f|force", &Settings.ForceBuild,
+            "F|force-all", &Settings.ForceBuildAll,
+            "L|libdir", &Settings.LibraryPath,
+            "B|bindir", &Settings.ExecutablePath,
+            "C|compiler", &Settings.SelectedCompiler,
+            "m|compiler-flags", &compilerFlags);
+        if(compilerFlags)
+            Settings.CompilerFlags ~= compilerFlags ~ " ";
+    }
 }

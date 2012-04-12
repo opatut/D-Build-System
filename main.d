@@ -57,23 +57,16 @@ string list() {
 int main(string[] args) {
     bool displayHelp, displayList;
     string configFile = "DBuildFile";
-    string compilerFlags;
+
+    // get command-line config
+    Settings.getOpt(args);
+    // get rest of options
     getopt(args,
         std.getopt.config.bundling,
         std.getopt.config.caseSensitive,
         "h|help", &displayHelp,
         "l|list-targets", &displayList,
-        "v|verbose", &Settings.Verbose,
-        "f|force", &Settings.ForceBuild,
-        "F|force-all", &Settings.ForceBuildAll,
-        "c|config", &configFile,
-        "L|libdir", &Settings.LibraryPath,
-        "B|bindir", &Settings.ExecutablePath,
-        "C|compiler", &Settings.SelectedCompiler,
-        "m|compiler-flags", &compilerFlags);
-
-    if(compilerFlags)
-        Settings.CompilerFlags ~= compilerFlags ~ " ";
+        "c|config", &configFile);
 
     string[] targetList = args[1..$];
 

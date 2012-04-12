@@ -15,6 +15,8 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+module dbs.target;
+
 import std.file : dirEntries, SpanMode, isDir;
 import std.array : endsWith;
 import std.string : format, strip;
@@ -22,10 +24,10 @@ import std.path;
 import std.conv;
 import std.stdio;
 
-import dependency;
-import settings;
-import compilebuilder;
-import output;
+import dbs.dependency;
+import dbs.settings;
+import dbs.compilebuilder;
+import dbs.output;
 
 /*****************************************************************
  * Builds a D package.

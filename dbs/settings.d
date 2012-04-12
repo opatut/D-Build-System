@@ -15,7 +15,7 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-module settings;
+module dbs.settings;
 
 /// Compilers available
 enum Compiler {

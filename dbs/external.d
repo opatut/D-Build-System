@@ -15,12 +15,14 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+module dbs.external;
+
 import std.stdio;
 
-import dependency;
-import settings;
-import compilebuilder;
-import output;
+import dbs.dependency;
+import dbs.settings;
+import dbs.compilebuilder;
+import dbs.output;
 
 class External : Dependency {
     string command;

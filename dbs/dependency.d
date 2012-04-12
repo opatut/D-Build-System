@@ -15,9 +15,11 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+module dbs.dependency;
+
 import std.stdio;
 
-import settings;
+import dbs.settings;
 
 class Dependency {
     string name;

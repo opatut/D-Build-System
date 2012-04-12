@@ -15,6 +15,8 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+module dbs.configfile;
+
 import std.file;
 import std.stdio;
 import std.regex;
@@ -23,7 +25,10 @@ import std.string;
 import std.traits;
 import std.conv;
 
-import dependency, target, external, settings;
+import dbs.dependency;
+import dbs.target;
+import dbs.external;
+import dbs.settings;
 
 int[2] findNext(string source, string open, string close) {
     int nextOpen = cast(int)countUntil(source, open);

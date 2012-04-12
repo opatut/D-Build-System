@@ -15,15 +15,17 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+module dbs.compilebuilder;
+
 import std.file;
 import std.stdio;
 import std.datetime;
 import std.string;
 import std.process : shell, ErrnoException;
 
-import settings;
-import dependency;
-import output;
+import dbs.settings;
+import dbs.dependency;
+import dbs.output;
 
 bool isAnyFileNewer(string[] files, string[] referenceFiles) {
     std.datetime.SysTime newestReference = SysTime.min;

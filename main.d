@@ -18,12 +18,7 @@
 import std.stdio;
 import std.getopt;
 
-import settings;
-import target;
-import dependency;
-import external;
-import configfile;
-import output;
+import dbs.all;
 
 ConfigFile cfg;
 

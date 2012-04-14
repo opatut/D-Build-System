@@ -59,6 +59,9 @@ struct Settings {
     /// Executable output path
     static string ExecutablePath = "bin/";
 
+    /// Object file output path
+    static string ObjectFilePath = "build/";
+
     /// -C|--compiler
     /// One of these: Dmd, Gnu, Ldc, Ldc2
     /// Compiler to use.

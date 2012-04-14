@@ -24,23 +24,29 @@ import std.string;
 import std.process : shell, ErrnoException;
 
 import dbs.settings;
+import dbs.target;
 import dbs.dependency;
 import dbs.output;
 
-bool isAnyFileNewer(string[] files, string[] referenceFiles) {
-    std.datetime.SysTime newestReference = SysTime.min;
+SysTime getModificationDate(string file) {
+    return timeLastModified(file, SysTime.min);
+}
 
-    // timeLastModified(source) >= timeLastModified(target, SysTime.min)
+SysTime getModificationDate(string[] files) {
+    std.datetime.SysTime mostRecentDate = SysTime.min;
 
-    foreach(r; referenceFiles) {
-        if(timeLastModified(r, SysTime.min) > newestReference)
-            newestReference = timeLastModified(r, SysTime.min);
-    }
     foreach(f; files) {
-        if(timeLastModified(f) > newestReference)
-            return true;
+        SysTime modificationDate = getModificationDate(f);
+        if(modificationDate > mostRecentDate) {
+            mostRecentDate = modificationDate;
+        }
     }
-    return false;
+
+    return mostRecentDate;
+}
+
+bool isAnyFileNewer(string[] files, string[] referenceFiles) {
+    return getModificationDate(files) > getModificationDate(referenceFiles);
 }
 
 bool runCommand(string cmd) {
@@ -58,8 +64,16 @@ bool runCommand(string cmd) {
     }
 }
 
+/**
+ * Splits a list of space-separated file names into an array. Spaces escaped with "\" 
+ * are not used to split the files.
+ */
+string[] splitFileList(string fileList) {
+    return cast(string[]) std.regex.split(fileList, std.regex.regex("(?<!\\\\)\\s+"));
+}
+
 class CompileBuilder {
-    TargetType targetType;
+    DTarget target;
 
     string[] linkNames;
     string[] linkPaths;
@@ -67,10 +81,9 @@ class CompileBuilder {
 
     string outputFile;
     string[] inputFiles;
-    string extraFlags;
 
-    this(string flags = "") {
-        extraFlags = flags;
+    this(DTarget target) {
+        this.target = target;
     }
 
     void addDependency(Dependency d) {
@@ -83,28 +96,47 @@ class CompileBuilder {
         includePaths ~= d.includePaths;
     }
 
-    @property string command() {
-        string cmd = "";
-        cmd ~= compilerCommand;
-        cmd ~= typeArgument;
-        cmd ~= " -of" ~ outputFile;
-        if(Settings.CompilerFlags) cmd ~= " " ~ strip(Settings.CompilerFlags);
-        if(extraFlags) cmd ~= " " ~ strip(extraFlags);
-        cmd ~= includeFlags;
-        cmd ~= linkFlags;
-        cmd ~= inputFileNames;
-        return cmd;
+    string singleObjectCommand(DModule mod) {
+        return format("%s -c %s %s %s -of%s %s", 
+            compilerCommand,
+            Settings.CompilerFlags,
+            target.flags,
+            includeFlags, 
+            mod.objectFilePath,
+            mod.sourceFile);
     }
 
-private:
-    @property string inputFileNames() {
-        string files = "";
-        foreach(f; inputFiles) {
-            files ~= " " ~ f;
+    string linkObjectsCommand(DModule[] modules) {
+        string objectFiles;
+        foreach(m; modules) {
+            objectFiles ~= m.objectFile ~ " ";
         }
-        return files;
+        objectFiles = strip(objectFiles);
+    
+        return format("%s %s %s %s %s -of%s %s",
+            compilerCommand,
+            Settings.CompilerFlags,
+            target.flags,
+            linkFlags,
+            typeArgument,
+            targetFileName(target.name),
+            objectFiles);
     }
-
+    
+    string targetFileName(string name) {
+        switch(target.type) {
+            case TargetType.Executable:
+                return format(BinaryFilenameFormat, name);
+            case TargetType.SharedLibrary:
+                return format(SharedLibraryFilenameFormat, name);
+            case TargetType.StaticLibrary:
+                return format(StaticLibraryFilenameFormat, name);
+            default:
+                assert(false, "Unknown target type.");
+        }
+    }
+    
+private:
     @property string includeFlags() {
         string flags = "";
         foreach(i; includePaths) {
@@ -125,7 +157,7 @@ private:
     }
 
     @property string typeArgument() {
-        switch(targetType) {
+        switch(target.type) {
             case TargetType.Executable: return "";
             case TargetType.StaticLibrary: return " -lib";
             case TargetType.SharedLibrary: return " -shared";

@@ -24,15 +24,35 @@ import dbs.settings;
 import dbs.compilebuilder;
 import dbs.output;
 
+class SystemDependency : Dependency {
+    this(string name) {
+        super(name);
+        linkNames = [name];
+    }
+    
+    bool requiresBuilding() {
+        return false;
+    }
+    
+    bool performBuild() {
+        // this is already built, don't do anything
+        return true;
+    }
+}
+
 class External : Dependency {
     string command;
 
-    this(string name, string command, string[] linkNames = [], string[] linkPaths = [], string[] includePaths = [], Dependency[] dependencies = []) {
+    this(string name, string command) {
+        super(name);
         this.command = command;
-        super(name, linkNames, linkPaths, includePaths, dependencies);
+    }
+    
+    bool requiresBuilding() {
+        return true;
     }
 
-    bool _prepare() {
+    bool performBuild() {
         if(Settings.ForceBuildAll || isAnyFileNewer(includePaths, linkPaths)) {
             if(Settings.Verbose) {
                 writefln(sWrap(":: Building external target %s", Color.White, Style.Bold), name);

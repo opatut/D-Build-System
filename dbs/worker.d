@@ -15,50 +15,48 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-module dbs.dependency;
+module dbs.worker;
 
-import std.stdio;
+import core.thread;
+import dbs.target;
 
-import dbs.settings;
-
-abstract class Dependency {
+class WorkerQueue {
 private:
-    bool built = false;
+    int _initialQueueSize;
 
 public:
-    string name;
-    Dependency[] dependencies;
-    string[] linkPaths;
-    string[] linkNames;
-    string[] includePaths;
+    WorkerThread[] queue;
+    int maxWorkers = 3;
     
-    this(string name) {
-        this.name = name;
+    @property float progress() {
+        return (_initialQueueSize - queue.length) * 1.0 / _initialQueueSize;
     }
     
-    bool build() {
-        if(!built) {
-            if(!buildDependencies()) {
-                return false;
-            }
-            built = true;
-            return performBuild();
-        } else {
-            return true;
-        }
+    void workerThreadFinished(WorkerThread thread) {
+    
     }
     
-    bool requiresBuilding();
-    bool performBuild();
-    
-protected:
-    bool buildDependencies() {
-        foreach(d; dependencies) {
-            if(!d.build()) {
-                return false;
-            }
-        }
+    /**
+     * Starts workers in a loop, and waits until the queue is finished.
+     */
+    bool work() {
         return true;
     }
 }
 
+class WorkerThread : Thread {
+    WorkerQueue queue;
+    DModule mod;
+    
+    this(WorkerQueue queue, DModule mod) { 
+        this.queue = queue;
+        this.mod = mod;
+        super(&run);
+    } 
+    
+private: 
+    void run() { 
+        mod.compile();
+        queue.workerThreadFinished(this);
+    }
+}

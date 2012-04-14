@@ -15,6 +15,7 @@
  *  along with DBS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
 import std.stdio;
 import std.getopt;
 import std.file;
@@ -113,3 +114,6 @@ For usage information, use --help.", list());
 
     return 0;
 }
+*/
+
+int main() { return 0; }

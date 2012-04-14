@@ -17,12 +17,14 @@
 
 module dbs.target;
 
-import std.file : dirEntries, SpanMode, isDir;
+import std.algorithm;
+import std.file;
 import std.array : endsWith;
-import std.string : format, strip;
+import std.string : format, strip, replace;
 import std.path;
 import std.conv;
 import std.stdio;
+import std.regex;
 
 import dbs.dependency;
 import dbs.settings;
@@ -33,83 +35,200 @@ import dbs.output;
  * Builds a D package.
  */
 
-class Target : Dependency {
-    TargetType type;
-
-    /** The files to include in this target.
+class DModule {
+    DTarget target;
+    string sourceFile;
+    string objectFile;
+    string includePath;
+    
+    /**
+     * Constructor.
+     * 
+     * Parameters:
+     *   sourceFile = The path to the source file, relative to the the includePath.
+     *   includePath = The path from which this module's source file can be included.
      *
-     * Can be either one of these:
-     * - a directory with a trailing "/" (uses all *.d files in this directory
-     *   and all recursive subdirectories), e.g. "path/to/sources/"
-     * - a single filepath, e.g. "path/to/file.d"
-     * - a list of filenames, e.g. "fileA.d fileB.d file\ with\ spaces.D"
+     * Examples:
+     *   File structure
+     *     - /home/user/src/project/
+     *     - /home/user/src/project/package_a/module_a.d
+     *     - /home/user/src/project/package_a/module_b.d
+     *
+     *   sourceFile = `package_a/module_*.d`
+     *   includePath = `/home/user/src/project` // or
+     *   includePath = `./` // if DBS is run from within /home/user/src/project
      */
-    string[] inputFiles;
-
-    string outputFile;
-    string documentRoot;
-    string flags;
-
-    bool _prepare() {
-        CompileBuilder comp = new CompileBuilder(flags);
-        comp.targetType = type;
-        foreach(d; dependencies) {
-            comp.addDependency(d);
-        }
-        comp.outputFile = outputFile;
-        comp.inputFiles = inputFiles;
-
-        if(Settings.ForceBuild || Settings.ForceBuildAll || isAnyFileNewer(inputFiles, [outputFile])) {
-            writefln(sWrap(":: Building %s target %s", Color.White, Style.Bold), type == TargetType.Executable ? "executable" : "library", name);
-            return runCommand(comp.command);
-        } else {
-            writefln(sWrap("-> Nothing to do for target %s", Color.Yellow), name);
-        }
-        return true;
+    this(string sourceFile, string includePath = "./") {
+        if(!std.file.exists(sourceFile))
+            throw new Exception("Source file `" ~ sourceFile ~ "` does not exist.");
+        this.sourceFile = absolutePath(buildNormalizedPath(includePath, sourceFile));
+        this.includePath = includePath;
+        this.objectFile = sourceFile.replace("/", "_").replace(regex(".d$"), "") ~ ".o";
     }
-
-    this(string name, string files = "", string documentRoot = "", TargetType type = TargetType.Executable, Dependency[] dependencies = [], string flags = "") {
-        this.type = type;
-        this.documentRoot = documentRoot;
-        this.flags = flags;
-
-        if(isDir(files)) {
-            if(documentRoot == "")
-                this.documentRoot = files;
-
-            // directory
-            if(name == "") {
-                name = to!string(pathSplitter(files).back);
-            }
-
-            foreach(string s; dirEntries(files, SpanMode.breadth)) {
-                if(extension(s) == ".d") {
-                    inputFiles ~= s;
-                }
-            }
-
-        } else {
-            assert(documentRoot != "", "You have to specify a document root if the input is a list of files.");
-
-            foreach(s; std.regex.split(files, std.regex.regex("(?<!\\\\)\\s+")))
-                inputFiles ~= s;
-
-            if(name == "") {
-                name = baseName(inputFiles[0], ".d");
-            }
-        }
-
-        if(type == TargetType.Executable) {
-            outputFile = Settings.ExecutablePath ~ format(BinaryFilenameFormat, name);
-        } else if(type == TargetType.StaticLibrary) {
-            outputFile = Settings.LibraryPath ~ format(StaticLibraryFilenameFormat, name);
-        } else if(type == TargetType.SharedLibrary) {
-            outputFile = Settings.LibraryPath ~ format(SharedLibraryFilenameFormat, name);
-        } else {
-            assert(false, format("Illegal target type for BuildTarget %s.", name));
-        }
-
-        super(name, [name], [Settings.LibraryPath], [this.documentRoot], dependencies);
+    
+    @property string objectFilePath() {
+        return buildNormalizedPath(target.objectFileDirectory, objectFile);
+    }
+    
+    bool requiresCompilation() {
+        return getModificationDate(sourceFile) > getModificationDate(objectFile);
+    }
+    
+    bool compile() {
+        writefln(sWrap(" [%3s%%] Building %s (#%s)", Color.Green), 55, sourceFile, 1);
+        return runCommand(target.builder.singleObjectCommand(this));
     }
 }
 
+class DTarget : Dependency {
+private:
+    bool performedBuild = false;
+
+public:
+    TargetType type;
+    DModule[] modules;
+    
+    string objectFileDirectory;
+    
+    CompileBuilder builder;
+    string flags;
+    
+    this(string name, TargetType type = TargetType.Executable) {
+        super(name);
+        this.type = type;
+        if(type != TargetType.Executable) {
+            this.linkNames = [name];
+            this.linkPaths = [Settings.LibraryPath];
+        }
+        this.builder = new CompileBuilder(this);
+        this.objectFileDirectory = buildNormalizedPath(absolutePath(Settings.ObjectFilePath), name);
+    }
+    
+    /**
+     * Adds a module for each D source file in the directory and it's subdirectories.
+     *
+     * The directory is considered the root directory of a package, containing
+     * modules and possibly subpackages. For each file inside this directory, take 
+     * the relative path from this directory's parent to the file, and use that as 
+     * the module path.
+     *  
+     * Examples: 
+     *      For directory = "/home/user/src/dbs/" take "dbs/all.d" as the module file,
+     *      and "/home/user/src/" as the module path.
+     */
+    void createModulesFromDirectory(string directory) {
+        // better work with absolute paths
+        directory = absolutePath(directory);
+        
+        // parent directory = include directory (assumption, see docstring)
+        string includePath = buildNormalizedPath(directory, "..");
+    
+        // get all the files in the directory
+        string[] files;
+        foreach(string s; dirEntries(directory, SpanMode.breadth)) {
+            if(extension(s) == ".d") {
+                files ~= s;
+            }
+        }
+        
+        createModulesFromFileList(files, includePath);
+    }
+    
+    /**
+     * Adds a module for each file in the list.
+     *
+     * Relative file paths will be tried to locate from the includePath. If no
+     * file exists at that path, it will be searched for this file relative to the
+     * current directory.
+     *
+     */
+    void createModulesFromFileList(string[] files, string includePath) {
+        includePath = absolutePath(includePath);
+        
+        foreach(f; files) {
+            string file = f;
+            if(!isAbsolute(file)) {
+                file = buildNormalizedPath(includePath, file);
+                if(!exists(file)) {
+                    file = absolutePath(file);
+                    if(!exists(file)) {
+                        throw new Exception(format("File `%s` not found in include Path `%s` or current directory.", f, includePath));
+                    }
+                }
+            }
+            
+            // now, get the path relative to the include Path
+            string rel = relativePath(file, includePath);
+            writeln("- " ~ rel);
+            addModule(new DModule(rel, includePath));
+        }
+    }
+    
+    bool requiresBuilding() {
+        return !performedBuild &&
+            (requiresCompilation() || requiresLinking());
+    }
+    
+    bool performBuild() {
+        writefln(sWrap(":: Building target %s", Color.White, Style.Bold), name);
+        preBuild();
+        if(requiresCompilation() && !compile())
+            return false;
+        if(requiresLinking() && !link())
+            return false;
+        performedBuild = true;
+        return true;
+    }
+    
+    void preBuild() {
+        foreach(d; dependencies) {
+            builder.addDependency(d);
+        }
+    }
+    
+    bool compile() {
+        foreach(m; modules) {
+            if(m.requiresCompilation()) {
+                if(!m.compile())
+                    return false;
+            }
+        }
+        return true;
+    }
+    
+    bool link() {
+        writefln(sWrap("==> Linking %s", Color.Purple, Style.Bold), name);
+        return runCommand(builder.linkObjectsCommand(modules));
+    }
+
+    bool requiresCompilation() {
+        foreach(m; modules) {
+            if(m.requiresCompilation())
+                return true;
+        }
+        return false;
+    }
+    
+    bool requiresLinking() {
+        // if any dependency is newer than the last build -> relink
+        foreach(d; dependencies) {
+            if(d.requiresBuilding()) {
+                return true;
+            }
+        }
+
+        // if we have to / had to build any of the modules -> relink
+        if(requiresBuilding() || performedBuild)
+            return true;
+
+        return false;
+    }
+    
+    void addModule(DModule mod) {
+        modules ~= mod;
+        mod.target = this;
+        if(!includePaths.canFind(mod.includePath))
+            includePaths ~= mod.includePath;
+    }
+    
+}

@@ -29,7 +29,7 @@ import dbs.dependency;
 import dbs.target;
 import dbs.external;
 import dbs.settings;
-
+/*
 int[2] findNext(string source, string open, string close) {
     int nextOpen = cast(int)countUntil(source, open);
     int nextClose = cast(int)countUntil(source, close);
@@ -289,3 +289,4 @@ class ConfigFile {
         return true;
     }
 }
+*/

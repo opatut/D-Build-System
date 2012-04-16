@@ -24,7 +24,9 @@ import std.string : format, strip, replace;
 import std.path;
 import std.conv;
 import std.stdio;
+import std.math;
 import std.regex;
+import std.parallelism;
 
 import dbs.dependency;
 import dbs.settings;
@@ -71,24 +73,24 @@ class DModule {
     }
     
     bool requiresCompilation() {
-        return getModificationDate(sourceFile) > getModificationDate(objectFile);
+        return getModificationDate(sourceFile) > getModificationDate(objectFilePath);
     }
     
     bool compile() {
-        writefln(sWrap(" [%3s%%] Building %s (#%s)", Color.Green), 55, sourceFile, 1);
         return runCommand(target.builder.singleObjectCommand(this));
     }
 }
 
 class DTarget : Dependency {
 private:
-    bool performedBuild = false;
+    bool performedCompilation = false;
 
 public:
     TargetType type;
     DModule[] modules;
     
     string objectFileDirectory;
+    bool forceCompilation = false;
     
     CompileBuilder builder;
     string flags;
@@ -159,14 +161,13 @@ public:
             
             // now, get the path relative to the include Path
             string rel = relativePath(file, includePath);
-            writeln("- " ~ rel);
             addModule(new DModule(rel, includePath));
         }
     }
     
     bool requiresBuilding() {
-        return !performedBuild &&
-            (requiresCompilation() || requiresLinking());
+        return forceCompilation || (!performedCompilation &&
+            (requiresCompilation() || requiresLinking()));
     }
     
     bool performBuild() {
@@ -176,7 +177,6 @@ public:
             return false;
         if(requiresLinking() && !link())
             return false;
-        performedBuild = true;
         return true;
     }
     
@@ -187,12 +187,23 @@ public:
     }
     
     bool compile() {
+        DModule[] buildModules;
+        
         foreach(m; modules) {
-            if(m.requiresCompilation()) {
-                if(!m.compile())
-                    return false;
+            if(m.requiresCompilation() || forceCompilation) {
+                buildModules ~= m;
             }
         }
+        
+        TaskPool pool = new TaskPool(4);
+        foreach(i, mod; pool.parallel(buildModules)) {
+            writefln(sWrap(" [%3s%%] Building %s", Color.Green),
+                round(100.0 * (i + 1) / buildModules.length), 
+                mod.sourceFile);
+            mod.compile();
+        }
+        pool.finish();
+        performedCompilation = buildModules.length > 0;
         return true;
     }
     
@@ -206,19 +217,22 @@ public:
             if(m.requiresCompilation())
                 return true;
         }
-        return false;
+        return forceCompilation;
     }
     
     bool requiresLinking() {
+        if(performedCompilation) 
+            return true;
+        
         // if any dependency is newer than the last build -> relink
-        foreach(d; dependencies) {
+        /*foreach(d; dependencies) {
             if(d.requiresBuilding()) {
                 return true;
             }
-        }
+        }*/
 
         // if we have to / had to build any of the modules -> relink
-        if(requiresBuilding() || performedBuild)
+        if(requiresCompilation())
             return true;
 
         return false;

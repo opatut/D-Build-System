@@ -7,6 +7,7 @@ void main() {
     
     DTarget t = new DTarget("dbs");
     t.type = TargetType.StaticLibrary;
+    // t.forceCompilation = true;
     
     t.createModulesFromDirectory("dbs/");
     

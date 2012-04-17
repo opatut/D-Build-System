@@ -17,7 +17,11 @@
 
 module dbs.settings;
 
+import std.stdio;
 import std.getopt;
+import std.parallelism;
+
+import dbs.output;
 
 /// Compilers available
 enum Compiler {
@@ -83,8 +87,13 @@ struct Settings {
     /// Extra flags to be passed to the compiler.
     static string CompilerFlags = "";
 
+    /// -j|--jobs
+    /// Number of worker jobs, 0 = NUMCORES, -1 = INFINITE
+    static int Jobs = -1; // -1 means <number of cores - 1>, -2 means infinite
+
     static void getOpt(ref string[] args) {
         string compilerFlags;
+        int jobs = 1;
         getopt(args,
             std.getopt.config.bundling,
             std.getopt.config.caseSensitive,
@@ -95,7 +104,15 @@ struct Settings {
             "L|libdir", &Settings.LibraryPath,
             "B|bindir", &Settings.ExecutablePath,
             "C|compiler", &Settings.SelectedCompiler,
-            "m|compiler-flags", &compilerFlags);
+            "m|compiler-flags", &compilerFlags,
+            "j|jobs", &jobs);
+
+        if(Settings.Verbose) {
+            if(jobs == 0) writefln(sWrap("Compiling in %s parallel jobs.", Color.Yellow), totalCPUs);
+            if(jobs == -1) writeln(sWrap("Compiling in endless parallel jobs.", Color.Yellow));
+        }
+        Settings.Jobs = jobs - 1; // so if we had -j=1 this means 0 worker threads, 0 -> -1, -1 -> -2
+
         if(compilerFlags)
             Settings.CompilerFlags ~= compilerFlags ~ " ";
     }

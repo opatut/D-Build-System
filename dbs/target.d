@@ -197,7 +197,17 @@ public:
             }
         }
 
-        TaskPool pool = new TaskPool(4);
+        // Settings.Jobs: 0 means <number of cores - 1>, -1 means <number of modules = one for each module = "infinite">
+        TaskPool pool;
+        if(Settings.Jobs == -1)  {
+            pool = new TaskPool();
+        } else if(Settings.Jobs < -1) {
+            pool = new TaskPool(buildModules.length);
+        } else {
+            writeln(Settings.Jobs, " workers");
+            pool = new TaskPool(Settings.Jobs);
+        }
+
         foreach(i, mod; pool.parallel(buildModules)) {
             writefln(sWrap(" [%3s%%] Building %s", Color.Green),
                 round(100.0 * (i + 1) / buildModules.length),
@@ -205,6 +215,7 @@ public:
             mod.compile();
         }
         pool.finish();
+
         performedCompilation = buildModules.length > 0;
         return true;
     }

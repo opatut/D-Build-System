@@ -29,11 +29,11 @@ class SystemDependency : Dependency {
         super(name);
         linkNames = [name];
     }
-    
+
     bool requiresBuilding() {
         return false;
     }
-    
+
     bool performBuild() {
         // this is already built, don't do anything
         return true;
@@ -47,7 +47,7 @@ class External : Dependency {
         super(name);
         this.command = command;
     }
-    
+
     bool requiresBuilding() {
         return true;
     }

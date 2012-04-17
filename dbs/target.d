@@ -42,10 +42,10 @@ class DModule {
     string sourceFile;
     string objectFile;
     string includePath;
-    
+
     /**
      * Constructor.
-     * 
+     *
      * Parameters:
      *   sourceFile = The path to the source file, relative to the the includePath.
      *   includePath = The path from which this module's source file can be included.
@@ -67,15 +67,15 @@ class DModule {
         this.includePath = includePath;
         this.objectFile = sourceFile.replace("/", "_").replace(regex(".d$"), "") ~ ".o";
     }
-    
+
     @property string objectFilePath() {
         return buildNormalizedPath(target.objectFileDirectory, objectFile);
     }
-    
+
     bool requiresCompilation() {
         return getModificationDate(sourceFile) > getModificationDate(objectFilePath);
     }
-    
+
     bool compile() {
         return runCommand(target.builder.singleObjectCommand(this));
     }
@@ -88,13 +88,13 @@ private:
 public:
     TargetType type;
     DModule[] modules;
-    
+
     string objectFileDirectory;
     bool forceCompilation = false;
-    
+
     CompileBuilder builder;
     string flags;
-    
+
     this(string name, TargetType type = TargetType.Executable) {
         super(name);
         this.type = type;
@@ -105,26 +105,26 @@ public:
         this.builder = new CompileBuilder(this);
         this.objectFileDirectory = buildNormalizedPath(absolutePath(Settings.ObjectFilePath), name);
     }
-    
+
     /**
      * Adds a module for each D source file in the directory and it's subdirectories.
      *
      * The directory is considered the root directory of a package, containing
-     * modules and possibly subpackages. For each file inside this directory, take 
-     * the relative path from this directory's parent to the file, and use that as 
+     * modules and possibly subpackages. For each file inside this directory, take
+     * the relative path from this directory's parent to the file, and use that as
      * the module path.
-     *  
-     * Examples: 
+     *
+     * Examples:
      *      For directory = "/home/user/src/dbs/" take "dbs/all.d" as the module file,
      *      and "/home/user/src/" as the module path.
      */
     void createModulesFromDirectory(string directory) {
         // better work with absolute paths
         directory = absolutePath(directory);
-        
+
         // parent directory = include directory (assumption, see docstring)
         string includePath = buildNormalizedPath(directory, "..");
-    
+
         // get all the files in the directory
         string[] files;
         foreach(string s; dirEntries(directory, SpanMode.breadth)) {
@@ -132,10 +132,10 @@ public:
                 files ~= s;
             }
         }
-        
+
         createModulesFromFileList(files, includePath);
     }
-    
+
     /**
      * Adds a module for each file in the list.
      *
@@ -146,7 +146,7 @@ public:
      */
     void createModulesFromFileList(string[] files, string includePath) {
         includePath = absolutePath(includePath);
-        
+
         foreach(f; files) {
             string file = f;
             if(!isAbsolute(file)) {
@@ -158,18 +158,18 @@ public:
                     }
                 }
             }
-            
+
             // now, get the path relative to the include Path
             string rel = relativePath(file, includePath);
             addModule(new DModule(rel, includePath));
         }
     }
-    
+
     bool requiresBuilding() {
         return forceCompilation || (!performedCompilation &&
             (requiresCompilation() || requiresLinking()));
     }
-    
+
     bool performBuild() {
         writefln(sWrap(":: Building target %s", Color.White, Style.Bold), name);
         preBuild();
@@ -179,26 +179,26 @@ public:
             return false;
         return true;
     }
-    
+
     void preBuild() {
         foreach(d; dependencies) {
             builder.addDependency(d);
         }
     }
-    
+
     bool compile() {
         DModule[] buildModules;
-        
+
         foreach(m; modules) {
             if(m.requiresCompilation() || forceCompilation) {
                 buildModules ~= m;
             }
         }
-        
+
         TaskPool pool = new TaskPool(4);
         foreach(i, mod; pool.parallel(buildModules)) {
             writefln(sWrap(" [%3s%%] Building %s", Color.Green),
-                round(100.0 * (i + 1) / buildModules.length), 
+                round(100.0 * (i + 1) / buildModules.length),
                 mod.sourceFile);
             mod.compile();
         }
@@ -206,7 +206,7 @@ public:
         performedCompilation = buildModules.length > 0;
         return true;
     }
-    
+
     bool link() {
         writefln(sWrap("==> Linking %s", Color.Purple, Style.Bold), name);
         return runCommand(builder.linkObjectsCommand(modules));
@@ -219,11 +219,11 @@ public:
         }
         return forceCompilation;
     }
-    
+
     bool requiresLinking() {
-        if(performedCompilation) 
+        if(performedCompilation)
             return true;
-        
+
         // if any dependency is newer than the last build -> relink
         /*foreach(d; dependencies) {
             if(d.requiresBuilding()) {
@@ -232,17 +232,45 @@ public:
         }*/
 
         // if we have to / had to build any of the modules -> relink
-        if(requiresCompilation())
+        if(requiresCompilation()) {
             return true;
+        }
+
+        // if there is no target file
+        if(!exists(outputFilePath)) {
+            return true;
+        }
+
+        // if the target file is newer than any of the object files
+        string[] objectFiles;
+        foreach(m; modules) {
+            objectFiles ~= m.objectFilePath;
+        }
+        if(isAnyFileNewer(objectFiles, [outputFilePath])) {
+            return true;
+        }
 
         return false;
     }
-    
+
+    @property string outputFilePath() {
+        switch(this.type) {
+            case TargetType.Executable:
+                return buildPath(Settings.ExecutablePath, format(BinaryFilenameFormat, this.name));
+            case TargetType.SharedLibrary:
+                return buildPath(Settings.LibraryPath, format(SharedLibraryFilenameFormat, this.name));
+            case TargetType.StaticLibrary:
+                return buildPath(Settings.LibraryPath, format(StaticLibraryFilenameFormat, this.name));
+            default:
+                assert(false, "Unknown target type.");
+        }
+    }
+
     void addModule(DModule mod) {
         modules ~= mod;
         mod.target = this;
         if(!includePaths.canFind(mod.includePath))
             includePaths ~= mod.includePath;
     }
-    
+
 }

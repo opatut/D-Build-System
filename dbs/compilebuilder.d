@@ -65,7 +65,7 @@ bool runCommand(string cmd) {
 }
 
 /**
- * Splits a list of space-separated file names into an array. Spaces escaped with "\" 
+ * Splits a list of space-separated file names into an array. Spaces escaped with "\"
  * are not used to split the files.
  */
 string[] splitFileList(string fileList) {
@@ -97,11 +97,11 @@ class CompileBuilder {
     }
 
     string singleObjectCommand(DModule mod) {
-        return format("%s -c %s %s %s -of%s %s", 
+        return format("%s -c %s %s %s -of%s %s",
             compilerCommand,
             Settings.CompilerFlags,
             target.flags,
-            includeFlags, 
+            includeFlags,
             mod.objectFilePath,
             mod.sourceFile);
     }
@@ -109,33 +109,20 @@ class CompileBuilder {
     string linkObjectsCommand(DModule[] modules) {
         string objectFiles;
         foreach(m; modules) {
-            objectFiles ~= m.objectFile ~ " ";
+            objectFiles ~= m.objectFilePath ~ " ";
         }
         objectFiles = strip(objectFiles);
-    
+
         return format("%s %s %s %s %s -of%s %s",
             compilerCommand,
             Settings.CompilerFlags,
             target.flags,
             linkFlags,
             typeArgument,
-            targetFileName(target.name),
+            target.outputFilePath,
             objectFiles);
     }
-    
-    string targetFileName(string name) {
-        switch(target.type) {
-            case TargetType.Executable:
-                return format(BinaryFilenameFormat, name);
-            case TargetType.SharedLibrary:
-                return format(SharedLibraryFilenameFormat, name);
-            case TargetType.StaticLibrary:
-                return format(StaticLibraryFilenameFormat, name);
-            default:
-                assert(false, "Unknown target type.");
-        }
-    }
-    
+
 private:
     @property string includeFlags() {
         string flags = "";

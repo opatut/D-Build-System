@@ -72,13 +72,15 @@ struct Settings {
     static bool Verbose = false;
 
     /// -f|--force
-    /// Force building every target in the target list.
-    static bool ForceBuild = false;
+    /// Force building every target (and every object) in the target list.
+    static bool ForceTargets = false;
 
     /// -F|--force-all
-    /// Force building every target and external
-    static bool ForceBuildAll = false;
+    /// Force building every target and external that is depended on.
+    static bool ForceAll = false;
 
+    /// -m|--compiler-flags
+    /// Extra flags to be passed to the compiler.
     static string CompilerFlags = "";
 
     static void getOpt(ref string[] args) {
@@ -88,8 +90,8 @@ struct Settings {
             std.getopt.config.caseSensitive,
             std.getopt.config.passThrough,      // ignore unrecognized options
             "v|verbose", &Settings.Verbose,
-            "f|force", &Settings.ForceBuild,
-            "F|force-all", &Settings.ForceBuildAll,
+            "f|force", &Settings.ForceTargets,
+            "F|force-all", &Settings.ForceAll,
             "L|libdir", &Settings.LibraryPath,
             "B|bindir", &Settings.ExecutablePath,
             "C|compiler", &Settings.SelectedCompiler,

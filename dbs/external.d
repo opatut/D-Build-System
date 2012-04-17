@@ -42,18 +42,22 @@ class SystemDependency : Dependency {
 
 class External : Dependency {
     string command;
+    bool forceBuilding = false;
 
     this(string name, string command) {
         super(name);
         this.command = command;
+        this.forceBuilding = Settings.ForceAll;
     }
 
     bool requiresBuilding() {
-        return true;
+        return this.forceBuilding;
     }
 
     bool performBuild() {
-        if(Settings.ForceBuildAll || isAnyFileNewer(includePaths, linkPaths)) {
+        if(!requiresBuilding()) return true;
+
+        if(isAnyFileNewer(includePaths, linkPaths)) {
             if(Settings.Verbose) {
                 writefln(sWrap(":: Building external target %s", Color.White, Style.Bold), name);
             }

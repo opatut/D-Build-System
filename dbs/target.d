@@ -73,7 +73,8 @@ class DModule {
     }
 
     bool requiresCompilation() {
-        return getModificationDate(sourceFile) > getModificationDate(objectFilePath);
+        return target.forceCompilation ||
+            getModificationDate(sourceFile) > getModificationDate(objectFilePath);
     }
 
     bool compile() {
@@ -104,6 +105,7 @@ public:
         }
         this.builder = new CompileBuilder(this);
         this.objectFileDirectory = buildNormalizedPath(absolutePath(Settings.ObjectFilePath), name);
+        this.forceCompilation = Settings.ForceTargets || Settings.ForceAll;
     }
 
     /**

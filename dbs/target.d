@@ -208,16 +208,23 @@ public:
             pool = new TaskPool(Settings.Jobs);
         }
 
+        bool failure = false;
         foreach(i, mod; pool.parallel(buildModules)) {
-            writefln(sWrap(" [%3s%%] Building %s", Color.Green),
-                round(100.0 * (i + 1) / buildModules.length),
-                mod.sourceFile);
-            mod.compile();
+            if(!failure) {
+                writefln(sWrap(" [%3s%%] Building %s", Color.Green),
+                    round(100.0 * (i + 1) / buildModules.length),
+                    mod.sourceFile);
+
+                if(!mod.compile()) {
+                    writeln("That is bad!");
+                    failure = true;
+                }
+            }
         }
         pool.finish();
 
         performedCompilation = buildModules.length > 0;
-        return true;
+        return !failure;
     }
 
     bool link() {

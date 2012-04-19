@@ -74,7 +74,7 @@ string[] splitFileList(string fileList) {
 }
 
 class CompileBuilder {
-    DTarget target;
+    Target target;
 
     string[] linkNames;
     string[] linkPaths;
@@ -83,7 +83,7 @@ class CompileBuilder {
     string outputFile;
     string[] inputFiles;
 
-    this(DTarget target) {
+    this(Target target) {
         this.target = target;
     }
 

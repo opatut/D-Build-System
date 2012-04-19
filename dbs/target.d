@@ -37,7 +37,7 @@ import dbs.dmodule;
 /**
  * Builds a D package into a binary/library file.
  */
-class DTarget : Dependency {
+class Target : Dependency {
 private:
     bool performedCompilation = false;
 

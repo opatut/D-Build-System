@@ -32,7 +32,7 @@ import dbs.output;
  * Builds a module from a D package into an object file.
  */
 class DModule {
-    DTarget target;
+    Target target;
     string sourceFile;
     string objectFile;
     string includePath;

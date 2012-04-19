@@ -5,8 +5,12 @@ import std.stdio;
 void main(string[] args) {
     Settings.getOpt(args);
 
-    DTarget t = new DTarget("dbs");
-    t.type = TargetType.StaticLibrary;
-    t.createModulesFromDirectory("dbs/");
-    t.build();
+    auto dbs = new DTarget("dbs", TargetType.StaticLibrary);
+    dbs.createModulesFromDirectory("dbs/");
+    dbs.build();
+
+    auto test = new DTarget("test", TargetType.Executable);
+    test.addModule("test.d");
+    test.dependencies ~= dbs;
+    test.build();
 }

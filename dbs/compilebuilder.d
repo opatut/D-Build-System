@@ -25,6 +25,7 @@ import std.process : shell, ErrnoException;
 
 import dbs.settings;
 import dbs.target;
+import dbs.dmodule;
 import dbs.dependency;
 import dbs.output;
 
@@ -88,7 +89,7 @@ class CompileBuilder {
 
     void addDependency(Dependency d) {
         foreach(dep; d.dependencies) {
-            addDependency(dep,);
+            addDependency(dep);
         }
 
         linkNames ~= d.linkNames;

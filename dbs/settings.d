@@ -39,7 +39,7 @@ enum TargetType {
     SystemLibrary
 }
 
-/// OS specific string formats
+// OS specific string formats
 version(Windows) {
     enum SharedLibraryFilenameFormat = "%s.lib";
     enum StaticLibraryFilenameFormat = "%s.lib";

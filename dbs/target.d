@@ -19,8 +19,8 @@ module dbs.target;
 
 import std.algorithm;
 import std.file;
-import std.array : endsWith;
-import std.string : format, strip, replace;
+import std.array;
+import std.string;
 import std.path;
 import std.conv;
 import std.stdio;
@@ -32,56 +32,11 @@ import dbs.dependency;
 import dbs.settings;
 import dbs.compilebuilder;
 import dbs.output;
+import dbs.dmodule;
 
-/*****************************************************************
- * Builds a D package.
+/**
+ * Builds a D package into a binary/library file.
  */
-
-class DModule {
-    DTarget target;
-    string sourceFile;
-    string objectFile;
-    string includePath;
-
-    /**
-     * Constructor.
-     *
-     * Parameters:
-     *   sourceFile = The path to the source file, relative to the the includePath.
-     *   includePath = The path from which this module's source file can be included.
-     *
-     * Examples:
-     *   File structure
-     *     - /home/user/src/project/
-     *     - /home/user/src/project/package_a/module_a.d
-     *     - /home/user/src/project/package_a/module_b.d
-     *
-     *   sourceFile = `package_a/module_*.d`
-     *   includePath = `/home/user/src/project` // or
-     *   includePath = `./` // if DBS is run from within /home/user/src/project
-     */
-    this(string sourceFile, string includePath = "./") {
-        if(!std.file.exists(sourceFile))
-            throw new Exception("Source file `" ~ sourceFile ~ "` does not exist.");
-        this.sourceFile = absolutePath(buildNormalizedPath(includePath, sourceFile));
-        this.includePath = includePath;
-        this.objectFile = sourceFile.replace("/", "_").replace(regex(".d$"), "") ~ ".o";
-    }
-
-    @property string objectFilePath() {
-        return buildNormalizedPath(target.objectFileDirectory, objectFile);
-    }
-
-    bool requiresCompilation() {
-        return target.forceCompilation ||
-            getModificationDate(sourceFile) > getModificationDate(objectFilePath);
-    }
-
-    bool compile() {
-        return runCommand(target.builder.singleObjectCommand(this));
-    }
-}
-
 class DTarget : Dependency {
 private:
     bool performedCompilation = false;
@@ -119,6 +74,9 @@ public:
      * Examples:
      *      For directory = "/home/user/src/dbs/" take "dbs/all.d" as the module file,
      *      and "/home/user/src/" as the module path.
+     *
+     * ToDo:
+     *      Read "module ...;" statement from files and properly determine per-file include path.
      */
     void createModulesFromDirectory(string directory) {
         // better work with absolute paths
@@ -141,37 +99,28 @@ public:
     /**
      * Adds a module for each file in the list.
      *
-     * Relative file paths will be tried to locate from the includePath. If no
-     * file exists at that path, it will be searched for this file relative to the
-     * current directory.
-     *
+     * See addModule(string, string) for details on how relative file paths are treated.
      */
-    void createModulesFromFileList(string[] files, string includePath) {
+    void createModulesFromFileList(string[] files, string includePath = "") {
         includePath = absolutePath(includePath);
 
         foreach(f; files) {
-            string file = f;
-            if(!isAbsolute(file)) {
-                file = buildNormalizedPath(includePath, file);
-                if(!exists(file)) {
-                    file = absolutePath(file);
-                    if(!exists(file)) {
-                        throw new Exception(format("File `%s` not found in include Path `%s` or current directory.", f, includePath));
-                    }
-                }
-            }
-
-            // now, get the path relative to the include Path
-            string rel = relativePath(file, includePath);
-            addModule(new DModule(rel, includePath));
+            addModule(f, includePath);
         }
     }
 
+    /**
+     * Returns whether this target has to be built.
+     */
     bool requiresBuilding() {
-        return forceCompilation || (!performedCompilation &&
-            (requiresCompilation() || requiresLinking()));
+        return forceCompilation || (requiresCompilation() || requiresLinking());
     }
 
+    /**
+     * Compiles this target, if required, and (re-)links it, if required.
+     *
+     * Returns: true if successfully built, otherwise false.
+     */
     bool performBuild() {
         writefln(sWrap(":: Building target %s", Color.White, Style.Bold), name);
         preBuild();
@@ -182,12 +131,21 @@ public:
         return true;
     }
 
+    /**
+     * Prepares the build process.
+     */
     void preBuild() {
         foreach(d; dependencies) {
             builder.addDependency(d);
         }
     }
 
+    /**
+     * Compiles all modules that require compilation.
+     *
+     * This method uses parallelism to build several modules in threads. The number of threads is determined
+     * by Settings.Jobs.
+     */
     bool compile() {
         DModule[] buildModules;
 
@@ -204,7 +162,7 @@ public:
         } else if(Settings.Jobs < -1) {
             pool = new TaskPool(buildModules.length);
         } else {
-            writeln(Settings.Jobs, " workers");
+            // writeln(Settings.Jobs, " workers");
             pool = new TaskPool(Settings.Jobs);
         }
 
@@ -227,11 +185,17 @@ public:
         return !failure;
     }
 
+    /**
+     * Links all object files into the target binary.
+     */
     bool link() {
         writefln(sWrap("==> Linking %s", Color.Purple, Style.Bold), name);
         return runCommand(builder.linkObjectsCommand(modules));
     }
 
+    /**
+     * Returns whether any of the modules has to be compiled.
+     */
     bool requiresCompilation() {
         foreach(m; modules) {
             if(m.requiresCompilation())
@@ -240,16 +204,23 @@ public:
         return forceCompilation;
     }
 
+    /**
+     * Returns whether this target has to be (re-)linked.
+     */
     bool requiresLinking() {
         if(performedCompilation)
             return true;
 
         // if any dependency is newer than the last build -> relink
-        /*foreach(d; dependencies) {
+        foreach(d; dependencies) {
             if(d.requiresBuilding()) {
                 return true;
             }
-        }*/
+
+            // if it is newer, relink
+            // if(d.modificationDate > modificationDate)
+            //    return true;
+        }
 
         // if we have to / had to build any of the modules -> relink
         if(requiresCompilation()) {
@@ -273,6 +244,9 @@ public:
         return false;
     }
 
+    /**
+     * The path to the output binary file.
+     */
     @property string outputFilePath() {
         switch(this.type) {
             case TargetType.Executable:
@@ -286,6 +260,9 @@ public:
         }
     }
 
+    /**
+     * Adds a module to this target.
+     */
     void addModule(DModule mod) {
         modules ~= mod;
         mod.target = this;
@@ -293,4 +270,28 @@ public:
             includePaths ~= mod.includePath;
     }
 
+    /**
+     * Adds a file as a module.
+     *
+     * Relative file paths will be tried to locate from the includePath. If no
+     * file exists at that path, it will be searched for this file relative to the
+     * current directory.
+     */
+    void addModule(string file, string includePath = "") {
+        string originalFile = file;
+
+        if(!isAbsolute(file)) {
+            file = buildNormalizedPath(includePath, file);
+            if(!exists(file)) {
+                file = absolutePath(file);
+                if(!exists(file)) {
+                    throw new Exception(format("File `%s` not found in include Path `%s` or current directory.", originalFile, includePath));
+                }
+            }
+        }
+
+        // now, get the path relative to the include Path
+        string rel = relativePath(file, includePath);
+        addModule(new DModule(rel, includePath));
+    }
 }

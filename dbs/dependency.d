@@ -31,11 +31,11 @@ public:
     string[] linkPaths;
     string[] linkNames;
     string[] includePaths;
-    
+
     this(string name) {
         this.name = name;
     }
-    
+
     bool build() {
         if(!built) {
             if(!buildDependencies()) {
@@ -47,10 +47,10 @@ public:
             return true;
         }
     }
-    
+
     bool requiresBuilding();
     bool performBuild();
-    
+
 protected:
     bool buildDependencies() {
         foreach(d; dependencies) {

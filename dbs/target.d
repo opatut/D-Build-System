@@ -121,7 +121,12 @@ public:
      *
      * Returns: true if successfully built, otherwise false.
      */
-    bool performBuild() {
+    bool performBuild() 
+    out (result) {
+        if(!result)
+            writefln(sWrap("Failed to build target %s", Color.Red, Style.Bold), name);
+    }
+    body {
         writefln(sWrap(":: Building target %s", Color.White, Style.Bold), name);
         preBuild();
         if(requiresCompilation() && !compile())

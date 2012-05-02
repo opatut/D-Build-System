@@ -21,7 +21,7 @@ import std.file;
 import std.stdio;
 import std.datetime;
 import std.string;
-import std.process : shell, ErrnoException;
+import std.process : system, ErrnoException;
 
 import dbs.settings;
 import dbs.target;
@@ -56,9 +56,7 @@ bool runCommand(string cmd) {
     }
 
     try {
-        string s = shell(cmd);
-        write(s);
-        return true;
+        return system(cmd) == 0;
     } catch(ErrnoException e) {
         if(Settings.Verbose) writeln(e);
         return false;
